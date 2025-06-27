@@ -1,29 +1,28 @@
 package net.chamosio.otg.rendering;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import net.chamosio.otg.assets.Assets;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import net.chamosio.otg.core.GameState;
-import net.chamosio.otg.core.entity.PlayerEntity;
+import net.chamosio.otg.rendering.title.TitleRenderer;
 
 public class Renderer {
-    public GameState gameState;
-    public SpriteBatch batch;
-    public Renderer(GameState gameState, SpriteBatch batch) {
-        this.gameState = gameState;
+    GameRenderer gameRenderer;
+    TitleRenderer titleRenderer;
+
+    SpriteBatch batch;
+    ShapeRenderer shapeRenderer;
+
+    public Renderer(GameState gameState, SpriteBatch batch, ShapeRenderer shapeRenderer) {
         this.batch = batch;
+        this.shapeRenderer = shapeRenderer;
+        this.gameRenderer = new GameRenderer(gameState, batch, shapeRenderer);
+        this.titleRenderer = new TitleRenderer(batch, shapeRenderer);
     }
 
-    public void renderPlayer(PlayerEntity player) {
-        batch.draw(
-            Assets.PLAYER_TEXTURE,
-            player.getHitbox().getX(),
-            player.getHitbox().getY(),
-            player.getHitbox().getWidth(),
-            player.getHitbox().getHeight()
-        );
+    public void renderGame(boolean debug) {
+        gameRenderer.render(debug);
     }
-
-    public void render() {
-        renderPlayer(gameState.player);
+    public void renderTitle(boolean debug) {
+        titleRenderer.render(debug);
     }
 }

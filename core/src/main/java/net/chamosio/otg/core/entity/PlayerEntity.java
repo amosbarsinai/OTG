@@ -12,7 +12,7 @@ public class PlayerEntity extends AbstractEntity {
     public static int SPEED = 4;
 
     public PlayerEntity() {
-        this.hitbox = new Hitbox(0, 0, 256, 256);
+        this.hitbox = new Hitbox(14, 0, 100, 128);
     }
 
     @Override
