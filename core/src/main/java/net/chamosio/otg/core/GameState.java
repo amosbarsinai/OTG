@@ -11,4 +11,12 @@ public class GameState {
     public GameState() {
         player = new PlayerEntity();
     }
+    public void handleKeyEvent(int key) {
+        switch (key) {
+            case PlayerEntity.K_UP    ->    player.moveUp();
+            case PlayerEntity.K_LEFT  ->  player.moveLeft();
+            case PlayerEntity.K_DOWN  ->  player.moveDown();
+            case PlayerEntity.K_RIGHT -> player.moveRight();
+        }
+    }
 }

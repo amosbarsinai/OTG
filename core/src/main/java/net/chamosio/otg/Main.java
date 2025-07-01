@@ -3,17 +3,17 @@ package net.chamosio.otg;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import net.chamosio.otg.assets.Assets;
 import net.chamosio.otg.core.GameState;
+import net.chamosio.otg.gui.TitleScreen;
 import net.chamosio.otg.rendering.Renderer;
+import net.chamosio.otg.rendering.title.TitleRenderer;
 
-enum GameMode {
-    TITLE_SCREEN
-}
-
-public class Main extends ApplicationAdapter {
+public class Main extends ApplicationAdapter implements InputProcessor {
     public static final int SCREEN_WIDTH  = 1024;
     public static final int SCREEN_HEIGHT = 1024;
 
@@ -21,15 +21,23 @@ public class Main extends ApplicationAdapter {
     GameState gameState;
     Renderer renderer;
     ShapeRenderer shapeRenderer;
+    TitleScreen titleScreen;
 
-    GameMode gameMode = GameMode.TITLE_SCREEN;
+    public static GameFlowMode gameFlowMode = GameFlowMode.TITLE_SCREEN;
 
     volatile boolean debug;
 
-    private void update(float delta) {
-        if (Gdx.input.isKeyPressed(Input.Keys.B)) Gdx.app.exit();
+    volatile int[] mousePos = {0, 0};
+
+    private static final float TICK_RATE = 1f / 32f; // 32 ticks per second
+    private float accumulator = 0f;
+
+    private void update() {
         debug = Gdx.input.isKeyPressed(Input.Keys.T);
-        gameState.player.update();
+        if (gameFlowMode == GameFlowMode.PLAYING) gameState.player.update();
+    }
+    public static void startGame() {
+        TitleRenderer.startFadeOut();
     }
 
     private void draw(boolean debug) {
@@ -37,8 +45,15 @@ public class Main extends ApplicationAdapter {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         batch.begin();
 
-        if (gameMode == GameMode.TITLE_SCREEN) {
-            renderer.renderTitle(debug);
+        switch (gameFlowMode) {
+            case TITLE_SCREEN ->
+                {
+                    renderer.renderTitle(debug, mousePos);
+                    if (TitleRenderer.getFinishedFadeOut()) {
+                        gameFlowMode = GameFlowMode.PLAYING;
+                    }
+                }
+            case PLAYING -> renderer.renderGame(debug);
         }
 
         batch.end();
@@ -46,10 +61,16 @@ public class Main extends ApplicationAdapter {
 
     @Override
     public void create() {
+        Gdx.input.setInputProcessor(this);
+
+        Assets.initialize(); // lazy initialization should happen before anything handling textures gets invoked
+
+        this.titleScreen = new TitleScreen();
+
         batch = new SpriteBatch();
         gameState = new GameState();
         shapeRenderer = new ShapeRenderer();
-        renderer = new Renderer(gameState, batch, shapeRenderer);
+        renderer = new Renderer(titleScreen, gameState, batch, shapeRenderer);
 
         batch.enableBlending();
         Gdx.gl.glEnable(GL20.GL_BLEND);
@@ -58,13 +79,70 @@ public class Main extends ApplicationAdapter {
 
     @Override
     public void render() {
-        float delta = Gdx.graphics.getDeltaTime();
-        update(delta);
+        accumulator += Gdx.graphics.getDeltaTime();
+        while (accumulator >= TICK_RATE) {
+            update();
+            accumulator -= TICK_RATE;
+        }
         draw(debug);
     }
 
     @Override
     public void dispose() {
         batch.dispose();
+        Assets.dispose();
+    }
+
+    @Override
+    public boolean keyDown(int keycode) {
+        if (keycode == Input.Keys.B) Gdx.app.exit();
+        InputHandler.handleKeyPressed(InputHandler.gdxToLocal(keycode));
+        return true;
+    }
+
+    @Override
+    public boolean keyUp(int keycode) {
+        InputHandler.handleKeyReleased(InputHandler.gdxToLocal(keycode));
+        return true;
+    }
+
+    @Override
+    public boolean keyTyped(char character) {
+        return false;
+    }
+
+    @Override
+    public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+        if (gameFlowMode == GameFlowMode.TITLE_SCREEN) {
+            this.titleScreen.handleClickEvent(screenX, SCREEN_HEIGHT - screenY);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+        return false;
+    }
+
+    @Override
+    public boolean touchCancelled(int screenX, int screenY, int pointer, int button) {
+        return false;
+    }
+
+    @Override
+    public boolean touchDragged(int screenX, int screenY, int pointer) {
+        return false;
+    }
+
+    @Override
+    public boolean mouseMoved(int screenX, int screenY) {
+        mousePos = new int[] {screenX, SCREEN_HEIGHT - screenY};
+        return true;
+    }
+
+    @Override
+    public boolean scrolled(float amountX, float amountY) {
+        return false;
     }
 }
