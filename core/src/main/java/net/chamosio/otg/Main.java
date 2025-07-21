@@ -5,13 +5,13 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import net.chamosio.otg.assets.Assets;
+import net.chamosio.otg.assets.TileTextures;
 import net.chamosio.otg.core.GameState;
-import net.chamosio.otg.gui.TitleScreen;
 import net.chamosio.otg.rendering.Renderer;
-import net.chamosio.otg.rendering.title.TitleRenderer;
 
 public class Main extends ApplicationAdapter implements InputProcessor {
     public static final int SCREEN_WIDTH  = 1024;
@@ -21,56 +21,41 @@ public class Main extends ApplicationAdapter implements InputProcessor {
     GameState gameState;
     Renderer renderer;
     ShapeRenderer shapeRenderer;
-    TitleScreen titleScreen;
-
-    public static GameFlowMode gameFlowMode = GameFlowMode.TITLE_SCREEN;
 
     volatile boolean debug;
 
     volatile int[] mousePos = {0, 0};
+
+    public BitmapFont font;
 
     private static final float TICK_RATE = 1f / 32f; // 32 ticks per second
     private float accumulator = 0f;
 
     private void update() {
         debug = Gdx.input.isKeyPressed(Input.Keys.T);
-        if (gameFlowMode == GameFlowMode.PLAYING) gameState.player.update();
-    }
-    public static void startGame() {
-        TitleRenderer.startFadeOut();
+        gameState.player.update();
     }
 
     private void draw(boolean debug) {
         Gdx.gl.glClearColor(0.157f, 0.176f, 0.188f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-        batch.begin();
 
-        switch (gameFlowMode) {
-            case TITLE_SCREEN ->
-                {
-                    renderer.renderTitle(debug, mousePos);
-                    if (TitleRenderer.getFinishedFadeOut()) {
-                        gameFlowMode = GameFlowMode.PLAYING;
-                    }
-                }
-            case PLAYING -> renderer.renderGame(debug);
-        }
-
-        batch.end();
+        renderer.renderGame(debug);
     }
 
     @Override
     public void create() {
         Gdx.input.setInputProcessor(this);
 
-        Assets.initialize(); // lazy initialization should happen before anything handling textures gets invoked
+        this.font = new BitmapFont();
+        this.font.getData().setScale(3f);
 
-        this.titleScreen = new TitleScreen();
+        Assets.initialize(); // lazy initialization should happen before anything handling textures gets invoked
 
         batch = new SpriteBatch();
         gameState = new GameState();
         shapeRenderer = new ShapeRenderer();
-        renderer = new Renderer(titleScreen, gameState, batch, shapeRenderer);
+        renderer = new Renderer(gameState, batch, shapeRenderer, font);
 
         batch.enableBlending();
         Gdx.gl.glEnable(GL20.GL_BLEND);
@@ -91,6 +76,8 @@ public class Main extends ApplicationAdapter implements InputProcessor {
     public void dispose() {
         batch.dispose();
         Assets.dispose();
+        font.dispose();
+        TileTextures.dispose();
     }
 
     @Override
@@ -113,10 +100,6 @@ public class Main extends ApplicationAdapter implements InputProcessor {
 
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-        if (gameFlowMode == GameFlowMode.TITLE_SCREEN) {
-            this.titleScreen.handleClickEvent(screenX, SCREEN_HEIGHT - screenY);
-            return true;
-        }
         return false;
     }
 

@@ -43,5 +43,10 @@ public final class Hitbox {
     public int getY() {return y;}
     public int getWidth() {return width;}
     public int getHeight() {return height;}
+
+    public void teleport(int x, int y) {
+        this.x = x;
+        this.y = y;
+    }
 }
 

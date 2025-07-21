@@ -93,7 +93,7 @@ public class InputHandler {
             case 23 -> B_PRESSED;
             case 24 -> N_PRESSED;
             case 25 -> M_PRESSED;
-            default -> throw new RuntimeException("unrecognized key");
+            default -> false;
         };
     }
     public static void handleKeyPressed(int key) {
@@ -184,7 +184,7 @@ public class InputHandler {
             case 23 -> 30;
             case 24 -> 42;
             case 25 -> 41;
-            default -> throw new RuntimeException("unrecognized key");
+            default -> 0xDEADBEEF;
         };
     }
     public static int gdxToLocal(int key) {
@@ -215,7 +215,7 @@ public class InputHandler {
             case 30 -> 23;
             case 42 -> 24;
             case 41 -> 25;
-            default -> throw new RuntimeException("unrecognized key");
+            default -> 0xDEADBEEF;
         };
     }
 }
